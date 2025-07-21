@@ -12,7 +12,7 @@ export default function Todo() {
   const [todoList, setTodoList] = useState([]);
 
   useEffect(() => {
-    fetch("https://jsonplaceholder.typicode.com/todos?_limit=5")
+    fetch("https://jsonplaceholder.typicode.com/todos?_limit=0")
       .then((res) => res.json())
       .then((data) => setTodoList(data));
   }, []);
