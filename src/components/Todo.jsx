@@ -3,61 +3,149 @@ import todo_icon from "../assets/todo_icon.png";
 import Todo_items from "./Todo_items";
 
 export default function Todo() {
-  // const Todo = () => {};
+  // const [todoList, setTodoList] = useState(
+  //   localStorage.getItem("todos")
+  //     ? JSON.parse(localStorage.getItem("todos"))
+  //     : []
+  // );
 
-  const [todoList, setTodoList] = useState(
-    localStorage.getItem("todos")
-      ? JSON.parse(localStorage.getItem("todos"))
-      : []
-  );
+  const [todoList, setTodoList] = useState([]);
+
+  useEffect(() => {
+    fetch("https://jsonplaceholder.typicode.com/todos?_limit=5")
+      .then((res) => res.json())
+      .then((data) => setTodoList(data));
+  }, []);
 
   const inputRef = useRef();
 
+  // const add = () => {
+  //   const inputText = inputRef.current.value.trim();
+
+  //   if (inputText === "") {
+  //     return null;
+  //   }
+  //   const newTodo = {
+  //     id: Date.now(),
+  //     text: inputText,
+  //     isComplete: false,
+  //   };
+  //   setTodoList((prev) => [...prev, newTodo]);
+  //   inputRef.current.value = "";
+  // };
+
   const add = () => {
     const inputText = inputRef.current.value.trim();
+    if (inputText === "") return;
 
-    if (inputText === "") {
-      return null;
-    }
     const newTodo = {
-      id: Date.now(),
-      text: inputText,
-      isComplete: false,
+      title: inputText,
+      completed: false,
     };
-    setTodoList((prev) => [...prev, newTodo]);
+
+    fetch("https://jsonplaceholder.typicode.com/todos", {
+      method: "POST",
+      body: JSON.stringify(newTodo),
+      headers: {
+        "Content-type": "application/json; charset=UTF-8",
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        // اضافه کردن به لیست
+        setTodoList((prev) => [
+          ...prev,
+          { ...data, text: data.title, id: Date.now(), isComplete: false },
+        ]);
+      });
+
     inputRef.current.value = "";
   };
 
+  // const deleteTodo = (id) => {
+  //   setTodoList((prvTodos) => {
+  //     return prvTodos.filter((todo) => todo.id !== id);
+  //   });
+  // };
   const deleteTodo = (id) => {
-    setTodoList((prvTodos) => {
-      return prvTodos.filter((todo) => todo.id !== id);
+    fetch(`https://jsonplaceholder.typicode.com/todos/${id}`, {
+      method: "DELETE",
+    }).then(() => {
+      setTodoList((prevTodos) => prevTodos.filter((todo) => todo.id !== id));
     });
   };
 
+  // const toggle = (id) => {
+  //   setTodoList((prevTodos) => {
+  //     return prevTodos.map((todo) => {
+  //       if (todo.id === id) {
+  //         return { ...todo, isComplete: !todo.isComplete };
+  //       }
+  //       return todo;
+  //     });
+  //   });
+  // };
+
+  // const editTodo = (id, newText) => {
+  //   setTodoList((prevTodos) => {
+  //     return prevTodos.map((todo) => {
+  //       if (todo.id === id) {
+  //         return { ...todo, text: newText };
+  //       }
+  //       return todo;
+  //     });
+  //   });
+  // };
   const toggle = (id) => {
-    setTodoList((prevTodos) => {
-      return prevTodos.map((todo) => {
-        if (todo.id === id) {
-          return { ...todo, isComplete: !todo.isComplete };
-        }
-        return todo;
+    const todo = todoList.find((todo) => todo.id === id);
+    fetch(`https://jsonplaceholder.typicode.com/todos/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        completed: !todo.completed,
+      }),
+      headers: {
+        "Content-type": "application/json; charset=UTF-8",
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setTodoList((prevTodos) =>
+          prevTodos.map((todo) =>
+            todo.id === id
+              ? {
+                  ...todo,
+                  completed: data.completed,
+                  isComplete: data.completed,
+                }
+              : todo
+          )
+        );
       });
-    });
   };
 
   const editTodo = (id, newText) => {
-    setTodoList((prevTodos) => {
-      return prevTodos.map((todo) => {
-        if (todo.id === id) {
-          return { ...todo, text: newText };
-        }
-        return todo;
+    fetch(`https://jsonplaceholder.typicode.com/todos/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        title: newText,
+      }),
+      headers: {
+        "Content-type": "application/json; charset=UTF-8",
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setTodoList((prevTodos) =>
+          prevTodos.map((todo) =>
+            todo.id === id ? { ...todo, text: data.title } : todo
+          )
+        );
       });
-    });
   };
-  useEffect(() => {
-    localStorage.setItem("todos", JSON.stringify(todoList));
-  }, [todoList]);
+
+  // useEffect(() => {
+  //   localStorage.setItem("todos", JSON.stringify(todoList));
+  // }, [todoList]);
 
   return (
     <div
@@ -90,11 +178,20 @@ export default function Todo() {
       <div>
         {todoList.map((item, index) => {
           return (
+            // <Todo_items
+            //   key={index}
+            //   text={item.text}
+            //   id={item.id}
+            //   isComplete={item.isComplete}
+            //   deleteTodo={deleteTodo}
+            //   toggle={toggle}
+            //   editTodo={editTodo}
+            // />
             <Todo_items
-              key={index}
-              text={item.text}
+              key={item.id}
+              text={item.title || item.text}
               id={item.id}
-              isComplete={item.isComplete}
+              isComplete={item.completed || item.isComplete}
               deleteTodo={deleteTodo}
               toggle={toggle}
               editTodo={editTodo}
